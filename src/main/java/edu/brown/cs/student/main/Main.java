@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.google.common.collect.ImmutableMap;
@@ -14,8 +16,12 @@ import freemarker.template.Configuration;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import org.json.JSONException;
+import org.json.JSONObject;
 import spark.*;
 import spark.template.freemarker.FreeMarkerEngine;
+
+import javax.xml.transform.Result;
 
 /**
  * The Main class of our project. This is where execution begins.
@@ -77,6 +83,7 @@ public final class Main {
       return "OK";
     });
 
+    Spark.post("/results", new ResultsHandler());
     // Allows requests from any domain (i.e., any URL). This makes development
     // easier, but it’s not a good idea for deployment.
     Spark.before((request, response) -> response.header("Access-Control-Allow-Origin", "*"));
@@ -106,18 +113,29 @@ public final class Main {
    */
   private static class ResultsHandler implements Route {
     @Override
-    public String handle(Request req, Response res) {
+    public String handle(Request req, Response res) throws JSONException {
       // TODO: Get JSONObject from req and use it to get the value of the sun, moon,
       // and rising
       // for generating matches
 
+      JSONObject object = new JSONObject(req.body());
+      String sun = object.getString("sun");
+      String moon = object.getString("moon");
+      String rising = object.getString("rising");
       // TODO: use the MatchMaker.makeMatches method to get matches
 
+      MatchMaker matchMaker = new MatchMaker();
+      List<String> myList = matchMaker.makeMatches(sun, moon, rising);
       // TODO: create an immutable map using the matches
-
+//      Map<String, String> myMap = new HashMap<>();
+//      for (String element : myList) {
+//        myMap.put(, element);
+//      }
+//      ImmutableMap<String, String> myImmutableMap = ImmutableMap.copyOf(myMap);
+      Map<String, Object> output = ImmutableMap.of("matches", myList);
       // TODO: return a json of the suggestions (HINT: use GSON.toJson())
       Gson GSON = new Gson();
-      return null;
+      return GSON.toJson(output);
     }
   }
 }
